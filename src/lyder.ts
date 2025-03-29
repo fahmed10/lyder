@@ -1,5 +1,5 @@
 import { renderDiff } from "./diff";
-import { getComponentName, wrapArray } from "./utils";
+import { getComponentName, isFunctionComponent, wrapArray } from "./utils";
 
 export type Arrayable<T> = T | T[];
 export type FunctionComponent = (props: any) => LyderRenderable;
@@ -38,7 +38,18 @@ export function createRoot(container: HTMLElement) {
         throw Error("Container passed to createRoot is null.");
     }
 
-    return { render: (root: Arrayable<LyderElement>) => render(container, root) };
+    return { render: (root: LyderElement) => render(container, root) };
+}
+
+function render(container: HTMLElement, root: LyderElement) {
+    let children = null;
+
+    if (isFunctionComponent(root)) {
+        children = initializeFunctionalComponent(root) as any;
+        root.symbol = children;
+    }
+
+    renderDiff({ type: container.tagName, props: { children }, domRef: container }, null, root);
 }
 
 export function createElement(type: string | FunctionComponent, props: any = null, ...children: LyderRenderable[]): LyderElement {
@@ -91,10 +102,6 @@ export function useState<T>(defaultValue?: T): [T, (value: T) => void] {
     }];
 }
 
-function render(container: HTMLElement, root: Arrayable<LyderElement>) {
-    renderDiff({ type: container.tagName, props: { children: null! }, domRef: container }, null, wrapElements(root));
-}
-
 function wrapElements(value?: Arrayable<LyderElement> | null): LyderElement | null | undefined {
     return Array.isArray(value) ? wrapFragment(value) : value;
 }
@@ -125,16 +132,17 @@ function getRenderingComponent(): Symbol {
 
 export function renderFunctionComponent(domParent: LyderElement<string>, component: LyderElement<FunctionComponent>): Arrayable<LyderElement> {
     component.domParent = domParent;
-    component.symbol ??= Symbol(`<${component.type.name}>`);
-    renderingComponent = component.symbol;
+    renderingComponent = component.symbol ?? null;
 
-    if (!componentMap.has(renderingComponent)) {
-        componentMap.set(renderingComponent, { instance: component, state: [] });
+    if (!componentMap.has(renderingComponent!)) {
+        component.symbol = initializeFunctionalComponent(component);
+        renderingComponent = component.symbol;
     }
-    const componentData = componentMap.get(renderingComponent)!;
 
+    const componentData = componentMap.get(renderingComponent!)!;
     componentRerenders = 0;
     let element;
+
     do {
         componentStateChanged = false;
         hooksCalled = 0;
@@ -157,4 +165,10 @@ export function renderFunctionComponent(domParent: LyderElement<string>, compone
     renderingComponent = null;
     componentData.cache = element;
     return element ?? [];
+}
+
+function initializeFunctionalComponent(component: LyderElement<FunctionComponent>): Symbol {
+    const symbol = Symbol(`<${component.type.name}>`);
+    componentMap.set(symbol, { instance: component, state: [] });
+    return symbol;
 }

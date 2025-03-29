@@ -97,7 +97,7 @@ function insertElement(root: LyderElement<string>, element: LyderElement) {
     }
 
 
-    const children = root.props.children ?? wrapArray([...componentMap][0]?.[1]?.cache);
+    const children = typeof root.props.children === "symbol" ? wrapArray(componentMap.get(root.props.children)?.cache) : root.props.children!;
     const elementsBefore = children.slice(0, children.findIndex(c => containsComponentInCache(c, element)));
     let index = elementsBefore.map(c => getComponentCachedSize(c)).reduce((a, b) => a + b, 0);
     wrapArray(toHtmlNode(root, element)).forEach(e => insertElementAtIndex(rootDom, e, index++));

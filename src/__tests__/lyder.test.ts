@@ -1,10 +1,10 @@
-import { Arrayable, componentMap, createElement, createRoot, LyderElement, useState } from "../lyder";
+import { componentMap, createElement, createRoot, LyderElement, useState } from "../lyder";
 import { queryByText } from '@testing-library/dom';
 import '@testing-library/jest-dom';
 
 beforeEach(() => componentMap.clear());
 
-function renderRoot(root: Arrayable<LyderElement>): HTMLElement {
+function renderRoot(root: LyderElement): HTMLElement {
     const container = document.createElement("div")!;
     document.body.appendChild(container);
     createRoot(container).render(root);
@@ -35,6 +35,46 @@ it("Inserts element at root correctly", () => {
     expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
 });
 
+it("Handles multiple roots at root correctly", () => {
+    let state, setState;
+
+    function App() {
+        [state, setState] = useState(0);
+
+        return Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`));
+    }
+
+    renderRoot(createElement(App));
+    const root = renderRoot(createElement(App));
+    expect(root).toBeEmptyDOMElement();
+    setState!(1);
+    expect(queryByText(root, "Test Item 0")).toBeInTheDocument();
+    setState!(2);
+    expect(queryByText(root, "Test Item 0")).toBeInTheDocument();
+    expect(queryByText(root, "Test Item 1")).toBeInTheDocument();
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
+});
+
+it("Handles multiple roots in child correctly", () => {
+    let state, setState;
+
+    function App() {
+        [state, setState] = useState(0);
+
+        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`)));
+    }
+
+    renderRoot(createElement(App));
+    const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
+    expect(root).toBeEmptyDOMElement();
+    setState!(1);
+    expect(queryByText(root, "Test Item 0")).toBeInTheDocument();
+    setState!(2);
+    expect(queryByText(root, "Test Item 0")).toBeInTheDocument();
+    expect(queryByText(root, "Test Item 1")).toBeInTheDocument();
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
+});
+
 it("Inserts element in child correctly", () => {
     let state, setState;
 
@@ -44,14 +84,14 @@ it("Inserts element in child correctly", () => {
         return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`)));
     }
 
-    const root = renderRoot(createElement(App));
-    expect(root.children[0]).toBeEmptyDOMElement();
+    const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
+    expect(root).toBeEmptyDOMElement();
     setState!(1);
     expect(queryByText(root, "Test Item 0")).toBeInTheDocument();
     setState!(2);
     expect(queryByText(root, "Test Item 0")).toBeInTheDocument();
     expect(queryByText(root, "Test Item 1")).toBeInTheDocument();
-    expect(Object.values(root.children[0].children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
 });
 
 it("Inserts element in middle at root correctly", () => {
@@ -78,10 +118,10 @@ it("Inserts element in middle in child correctly", () => {
         return createElement("div", null, state.map(text => createElement("p", null, text)));
     }
 
-    const root = renderRoot(createElement(App));
-    expect(Object.values(root.children[0].children)).toEqual([queryByText(root, "Test A"), queryByText(root, "Test C")]);
+    const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test A"), queryByText(root, "Test C")]);
     setState!(["Test A", "Test B", "Test C"]);
-    expect(Object.values(root.children[0].children)).toEqual([queryByText(root, "Test A"), queryByText(root, "Test B"), queryByText(root, "Test C")]);
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test A"), queryByText(root, "Test B"), queryByText(root, "Test C")]);
 });
 
 it("Updates element text correctly", () => {
@@ -140,10 +180,10 @@ it("Deletes element in child correctly", () => {
         return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`)));
     }
 
-    const root = renderRoot(createElement(App));
-    expect(Object.values(root.children[0].children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
+    const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0"), queryByText(root, "Test Item 1")]);
     setState!(1);
-    expect(Object.values(root.children[0].children)).toEqual([queryByText(root, "Test Item 0")]);
+    expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0")]);
     setState!(0);
-    expect(root.children[0]).toBeEmptyDOMElement();
+    expect(root).toBeEmptyDOMElement();
 });
