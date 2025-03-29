@@ -38,7 +38,7 @@ export function createRoot(container: HTMLElement) {
         throw Error("Container passed to createRoot is null.");
     }
 
-    return { render: (root: LyderElement) => render(container, root) };
+    return { render: (root: LyderElement | LyderElement[]) => render(container, Array.isArray(root) ? createElement(() => root) : root) };
 }
 
 function render(container: HTMLElement, root: LyderElement) {
@@ -161,6 +161,10 @@ export function renderFunctionComponent(domParent: LyderElement<string>, compone
             break;
         }
     } while (componentStateChanged);
+
+    if (Array.isArray(element) && element.some(c => c.key == null)) {
+        console.error("All elements in a list should have a unique key prop assigned to them. Not assigning a key prop can lead to unexpected behaviour and degraded performance.");
+    }
 
     renderingComponent = null;
     componentData.cache = element;

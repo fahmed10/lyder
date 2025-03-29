@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 beforeEach(() => componentMap.clear());
 
-function renderRoot(root: LyderElement): HTMLElement {
+function renderRoot(root: LyderElement | LyderElement[]): HTMLElement {
     const container = document.createElement("div")!;
     document.body.appendChild(container);
     createRoot(container).render(root);
@@ -22,7 +22,7 @@ it("Inserts element at root correctly", () => {
     function App() {
         [state, setState] = useState(0);
 
-        return Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`));
+        return Array(state).fill(0).map((_, i) => createElement("p", { key: i }, `Test Item ${i}`));
     }
 
     const root = renderRoot(createElement(App));
@@ -41,7 +41,7 @@ it("Handles multiple roots at root correctly", () => {
     function App() {
         [state, setState] = useState(0);
 
-        return Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`));
+        return Array(state).fill(0).map((_, i) => createElement("p", { key: i }, `Test Item ${i}`));
     }
 
     renderRoot(createElement(App));
@@ -61,7 +61,7 @@ it("Handles multiple roots in child correctly", () => {
     function App() {
         [state, setState] = useState(0);
 
-        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`)));
+        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", { key: i }, `Test Item ${i}`)));
     }
 
     renderRoot(createElement(App));
@@ -81,7 +81,7 @@ it("Inserts element in child correctly", () => {
     function App() {
         [state, setState] = useState(0);
 
-        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`)));
+        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", { key: i }, `Test Item ${i}`)));
     }
 
     const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
@@ -100,7 +100,7 @@ it("Inserts element in middle at root correctly", () => {
     function App() {
         [state, setState] = useState(["Test A", "Test C"]);
 
-        return state.map(text => createElement("p", null, text));
+        return state.map(text => createElement("p", { key: text }, text));
     }
 
     const root = renderRoot(createElement(App));
@@ -115,7 +115,7 @@ it("Inserts element in middle in child correctly", () => {
     function App() {
         [state, setState] = useState(["Test A", "Test C"]);
 
-        return createElement("div", null, state.map(text => createElement("p", null, text)));
+        return createElement("div", null, state.map(text => createElement("p", {key: text}, text)));
     }
 
     const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
@@ -160,7 +160,7 @@ it("Deletes element at root correctly", () => {
     function App() {
         [state, setState] = useState(2);
 
-        return Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`));
+        return Array(state).fill(0).map((_, i) => createElement("p", { key: i }, `Test Item ${i}`));
     }
 
     const root = renderRoot(createElement(App));
@@ -177,7 +177,7 @@ it("Deletes element in child correctly", () => {
     function App() {
         [state, setState] = useState(2);
 
-        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", null, `Test Item ${i}`)));
+        return createElement("div", null, Array(state).fill(0).map((_, i) => createElement("p", { key: i }, `Test Item ${i}`)));
     }
 
     const root = renderRoot(createElement(App)).children[0] as HTMLDivElement;
@@ -186,4 +186,34 @@ it("Deletes element in child correctly", () => {
     expect(Object.values(root.children)).toEqual([queryByText(root, "Test Item 0")]);
     setState!(0);
     expect(root).toBeEmptyDOMElement();
+});
+
+it("Shows error when rendering list without keys", () => {
+    function App() {
+        return [
+            createElement("li", null, "Test 1"),
+            createElement("li", null, "Test 2"),
+            createElement("li", null, "Test 3"),
+        ];
+    }
+
+    const errorSpy = jest.spyOn(console, "error");
+    errorSpy.mockImplementation(() => { });
+    renderRoot(createElement(App)).children[0] as HTMLDivElement;
+    expect(errorSpy).toHaveBeenCalledWith("All elements in a list should have a unique key prop assigned to them. Not assigning a key prop can lead to unexpected behaviour and degraded performance.");
+    errorSpy.mockClear();
+});
+
+it("Does not show error when rendering list with keys", () => {
+    function App() {
+        return [
+            createElement("li", { key: 1 }, "Test 1"),
+            createElement("li", { key: 2 }, "Test 2"),
+            createElement("li", { key: 3 }, "Test 3"),
+        ];
+    }
+
+    const errorSpy = jest.spyOn(console, "error");
+    renderRoot(createElement(App)).children[0] as HTMLDivElement;
+    expect(errorSpy).toHaveBeenCalledTimes(0);
 });

@@ -61,7 +61,7 @@ function matchElements(old: LyderElement[], current: LyderElement[]): [LyderElem
     const result: [LyderElement?, LyderElement?][] = [];
 
     const keys = current.filter(c => c.key != null).length;
-    if (keys != 0 && keys != current.length) {
+    if (keys !== 0 && keys !== current.length) {
         console.error("All elements in a list should have a unique key prop assigned to them. Assigning keys to only some elements in a list can lead to unexpected behaviour.");
     }
 
@@ -95,7 +95,6 @@ function insertElement(root: LyderElement<string>, element: LyderElement) {
         wrapArray(toHtmlNode(root, element)).forEach(e => rootDom.appendChild(e));
         return;
     }
-
 
     const children = typeof root.props.children === "symbol" ? wrapArray(componentMap.get(root.props.children)?.cache) : root.props.children!;
     const elementsBefore = children.slice(0, children.findIndex(c => containsComponentInCache(c, element)));
