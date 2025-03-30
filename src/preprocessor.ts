@@ -42,11 +42,18 @@ export default function (): PluginObj {
                 );
             },
             Identifier(path) {
-                if (!isSpecialIdentifier(path.node)) {
+                if (isSpecialIdentifier(path.node)) {
+                    path.replaceWith(getStateGetter(path.node.name));
+                }
+            },
+            MemberExpression(path, state) {
+                if (!(state.opts as any).babelJsx) {
                     return;
                 }
 
-                path.replaceWith(getStateGetter(path.node.name));
+                if (path.node.object.type === "Identifier" && path.node.object.name === "React") {
+                    path.node.object.name = "Lyder";
+                }
             },
             AssignmentExpression(path) {
                 if (!isSpecialIdentifier(path.node.left)) {
