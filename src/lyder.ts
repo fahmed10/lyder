@@ -1,5 +1,5 @@
 import { renderDiff } from "./diff";
-import { getComponentName, isFunctionComponent, wrapArray } from "./utils";
+import { getComponentName, isFragment, isFunctionComponent, isLyderElement, wrapElements, wrapFragment } from "./utils";
 
 export type Arrayable<T> = T | T[];
 export type FunctionComponent = (props: any) => LyderRenderable;
@@ -38,7 +38,7 @@ export function createRoot(container: HTMLElement) {
         throw Error("Container passed to createRoot is null.");
     }
 
-    return { render: (root: LyderElement | LyderElement[]) => render(container, Array.isArray(root) ? createElement(() => root) : root) };
+    return { render: (root: LyderRenderable) => render(container, !isLyderElement(root) ? createElement(() => root) : root) };
 }
 
 function render(container: HTMLElement, root: LyderElement) {
@@ -66,7 +66,7 @@ export function createElement(type: string | FunctionComponent, props: any = nul
     props ??= {};
     const key = props.key;
     delete props.key;
-    props.children = children.map(c => nodeToElement(c));
+    props.children ??= children.map(c => nodeToElement(c));
 
     return { type, props, key };
 }
@@ -100,14 +100,6 @@ export function useState<T>(defaultValue?: T): [T, (value: T) => void] {
         const result = wrapElements(renderFunctionComponent(component.instance.domParent!, component.instance));
         renderDiff(component.instance.domParent!, cache, result);
     }];
-}
-
-function wrapElements(value?: Arrayable<LyderElement> | null): LyderElement | null | undefined {
-    return Array.isArray(value) ? wrapFragment(value) : value;
-}
-
-function wrapFragment(value: Arrayable<LyderElement> | null | undefined, key?: LyderKey, internal: boolean = true): LyderElement<typeof FRAGMENT_SYMBOL> {
-    return { type: FRAGMENT_SYMBOL, props: { children: wrapArray(value), internal }, key };
 }
 
 function nodeToElement(node: LyderRenderable) {
@@ -162,7 +154,7 @@ export function renderFunctionComponent(domParent: LyderElement<string>, compone
         }
     } while (componentStateChanged);
 
-    if (Array.isArray(element) && element.some(c => c.key == null)) {
+    if (Array.isArray(element) && element.some(c => c?.key == null)) {
         console.error("All elements in a list should have a unique key prop assigned to them. Not assigning a key prop can lead to unexpected behaviour and degraded performance.");
     }
 
