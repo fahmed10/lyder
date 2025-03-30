@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/main.d.ts",
       "default": "./dist/main.js"
+    },
+    "./preprocessor": {
+      "types": "./dist/preprocessor.d.ts",
+      "default": "./dist/preprocessor.js"
     }
   },
   "devDependencies": {
