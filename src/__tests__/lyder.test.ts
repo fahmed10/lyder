@@ -109,6 +109,24 @@ it("Inserts element in middle at root correctly", () => {
     expect(Object.values(root.children)).toEqual([queryByText(root, "Test A"), queryByText(root, "Test B"), queryByText(root, "Test C")]);
 });
 
+it("Handles null child correctly", () => {
+    function App() {
+        return createElement("p", null, null);
+    }
+
+    const root = renderRoot(createElement(App)).children[0] as HTMLParagraphElement;
+    expect(root).toBeEmptyDOMElement();
+});
+
+it("Handles undefined child correctly", () => {
+    function App() {
+        return createElement("p", null, undefined);
+    }
+
+    const root = renderRoot(createElement(App)).children[0] as HTMLParagraphElement;
+    expect(root).toBeEmptyDOMElement();
+});
+
 it("Inserts element in middle in child correctly", () => {
     let state, setState;
 

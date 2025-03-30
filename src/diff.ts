@@ -144,7 +144,11 @@ function copyPropertiesToHtmlElement(element: LyderElement<string>, domElement: 
     Object.keys(element.props).filter(k => k !== "children" && (domElement as any)[k] !== element.props[k]).forEach(k => (domElement as any)[k] = element.props[k]);
 }
 
-function toHtmlNode(root: LyderElement<string>, element: LyderElement): Arrayable<Node> {
+function toHtmlNode(root: LyderElement<string>, element?: LyderElement | null): Arrayable<Node> {
+    if (element == null) {
+        return [];
+    }
+
     if (isFunctionComponent(element)) {
         return wrapArray(renderFunctionComponent(root, element)).flatMap(e => toHtmlNode(root, e));
     }
